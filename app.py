@@ -42,6 +42,7 @@ def message():
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
                 temp_file.write(response.content)
                 temp_file_path = temp_file.name
+                print(f"PDF downloaded to {temp_file_path}")
                 pdf = PdfReader(temp_file_path)
                 text = ""
                 for page in pdf.pages:
@@ -54,6 +55,7 @@ def message():
                 chunks = text_splitter.split_text(text=text)
                 embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
                 if not chunks:
+                    print("No text chunks found in PDF.")
                     return "No text chunks found in PDF.", 500
                 VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
                 response = "Received, You can now ask your questions"
