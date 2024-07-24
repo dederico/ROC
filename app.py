@@ -4,7 +4,8 @@ import requests
 from twilio.rest import Client as TwilioClient
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+#from langchain_openai import OpenAIEmbeddings
 import tempfile
 from PyPDF2 import PdfReader
 from langchain_community.vectorstores import FAISS
