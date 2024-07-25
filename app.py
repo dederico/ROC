@@ -20,7 +20,7 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_client = TwilioClient(account_sid, auth_token)
-twilio_phone_number = "whatsapp:+19154400045"
+twilio_phone_number = "whatsapp:+528141701647"
 
 # Configurar aplicación Flask y logging
 app = Flask(__name__)
