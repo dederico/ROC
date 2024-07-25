@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 import psutil
 import logging
 
-# Load environment variables
+# Cargar variables de entorno
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 account_sid = os.getenv('TWILIO_ACCOUNT_SID')
@@ -22,17 +22,17 @@ auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_client = TwilioClient(account_sid, auth_token)
 twilio_phone_number = "whatsapp:+19154400045"
 
-# Configure Flask app and logging
+# Configurar aplicación Flask y logging
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 pdf_exists = False
 VectorStore = None
 
-def log_memory_usage(context):
+def log_memory_usage(contexto):
     process = psutil.Process(os.getpid())
     mem_info = process.memory_info()
-    logging.debug(f"{context} Memory Usage: RSS={mem_info.rss}, VMS={mem_info.vms}")
+    logging.debug(f"{contexto} Uso de memoria: RSS={mem_info.rss}, VMS={mem_info.vms}")
 
 @app.route("/message", methods=["POST", "GET"])
 def message():
@@ -43,12 +43,12 @@ def message():
     question = request.values.get('Body', '')
     response_message = ""
 
-    logging.debug(f"Received request: MediaContentType0={media_content_type}, MediaUrl0={pdf_url}, From={sender_phone_number}")
+    logging.debug(f"Solicitud recibida: MediaContentType0={media_content_type}, MediaUrl0={pdf_url}, From={sender_phone_number}")
 
     if media_content_type == 'application/pdf':
         pdf_exists = True
-        logging.debug("Processing PDF...")
-        log_memory_usage("Before PDF processing")
+        logging.debug("Procesando PDF...")
+        log_memory_usage("Antes de procesar el PDF")
         try:
             response = requests.get(pdf_url)
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
@@ -66,20 +66,20 @@ def message():
                 chunks = text_splitter.split_text(text=text)
                 embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
                 if not chunks:
-                    response_message = "No text chunks found in PDF."
+                    response_message = "No se encontraron fragmentos de texto en el PDF."
                 else:
                     VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
-                    response_message = "Received, You can now ask your questions"
-                log_memory_usage("After PDF processing and before FAISS creation")
+                    response_message = "PDF recibido, ahora puedes hacer tus preguntas."
+                log_memory_usage("Después de procesar el PDF y antes de crear FAISS")
         except Exception as e:
-            logging.error(f"Error processing PDF: {e}")
-            response_message = "Error processing PDF."
+            logging.error(f"Error al procesar el PDF: {e}")
+            response_message = "Error al procesar el PDF."
 
     elif pdf_exists:
-        logging.debug(f"Received question: {question}")
+        logging.debug(f"Pregunta recibida: {question}")
         try:
             if VectorStore is None:
-                response_message = "VectorStore is not initialized."
+                response_message = "VectorStore no está inicializado."
                 logging.error(response_message)
                 raise ValueError(response_message)
             docs = VectorStore.similarity_search(query=question, k=3)
@@ -89,51 +89,51 @@ def message():
                 chain_type="stuff"
             )
             answer = chain.run(input_documents=docs, question=question)
-            logging.debug(f"Generated answer: {answer}")
+            logging.debug(f"Respuesta generada: {answer}")
 
-            # Send message via Twilio
+            # Enviar mensaje a través de Twilio
             if not sender_phone_number.startswith('whatsapp:+'):
-                response_message = "Invalid sender phone number format."
+                response_message = "Formato de número de teléfono del remitente inválido."
                 logging.error(response_message)
                 return response_message, 400
             if not twilio_phone_number.startswith('whatsapp:+'):
-                response_message = "Invalid Twilio phone number format."
+                response_message = "Formato de número de teléfono de Twilio inválido."
                 logging.error(response_message)
                 return response_message, 400
 
             try:
-                logging.debug(f"Sending message: From={twilio_phone_number}, To={sender_phone_number}, Body={answer}")
+                logging.debug(f"Enviando mensaje: From={twilio_phone_number}, To={sender_phone_number}, Body={answer}")
                 message = twilio_client.messages.create(
                     body=answer,
                     from_=twilio_phone_number,
                     to=sender_phone_number
                 )
-                logging.debug(f"Message sent successfully: SID={message.sid}")
+                logging.debug(f"Mensaje enviado con éxito: SID={message.sid}")
                 return str(message.sid)
             except Exception as e:
-                logging.error(f"Twilio exception while sending answer: {e}")
-                response_message = "Failed to send message."
+                logging.error(f"Excepción de Twilio al enviar la respuesta: {e}")
+                response_message = "No se pudo enviar el mensaje."
         except Exception as e:
-            logging.error(f"Error during QA processing: {e}")
-            response_message = "Error during QA processing."
+            logging.error(f"Error durante el procesamiento de QA: {e}")
+            response_message = "Error durante el procesamiento de QA."
 
     else:
-        response_message = "No PDF file uploaded. You can still ask questions or say 'hello' to continue the conversation."
+        response_message = "No se ha subido ningún archivo PDF. Aún puedes hacer preguntas o decir 'hola' para continuar la conversación."
         logging.debug(response_message)
 
     try:
         if sender_phone_number:
-            logging.debug(f"Sending response: From={twilio_phone_number}, To={sender_phone_number}, Body={response_message}")
+            logging.debug(f"Enviando respuesta: From={twilio_phone_number}, To={sender_phone_number}, Body={response_message}")
             message = twilio_client.messages.create(
                 body=response_message,
                 from_=twilio_phone_number,
                 to=sender_phone_number
             )
-            logging.debug(f"Message sent successfully: SID={message.sid}")
+            logging.debug(f"Mensaje enviado con éxito: SID={message.sid}")
         return str(message.sid)
     except Exception as e:
-        logging.error(f"Twilio exception while sending response: {e}")
-        return "Failed to send message.", 500
+        logging.error(f"Excepción de Twilio al enviar la respuesta: {e}")
+        return "No se pudo enviar el mensaje.", 500
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5500))
