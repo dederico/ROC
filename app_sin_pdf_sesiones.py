@@ -42,6 +42,8 @@ Tiempos de Respuesta:
     SOLICITUD DE INFORMACIÓN: [ Inmediata ]
 
 El Tiempo de respuesta puedes calcularlo en base a tu experiencia.
+
+Es importante que tengas todos los atributos antes de "generar" el objeto de [Solicitud, Queja, Reporte, Solicitud de Información]
     Nombre: [Cliente que Genera Reporte, o Anonimo]
     Tipo: [Solicitud, Queja, Reporte, Solicitud de Información]
     Folio: [REP-XXXXXXX] 
